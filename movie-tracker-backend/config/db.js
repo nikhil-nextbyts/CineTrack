@@ -20,12 +20,12 @@ export async function testConnection() {
     console.log("✅ Connected to MySQL");
     conn.release();
   } catch (err) {
-    console.error("❌ Database connection failed:", err);
-    // Optional in production: fail fast so Railway restarts with corrected env
-    // process.exit(1);
+    console.error("❌ Database connection failed:", err.message);
+    // Don't crash the process — the pool will retry on the next query
   }
 }
 
-testConnection();
+// testConnection() is called explicitly from app.js after the server starts,
+// not at module load time, so a slow/unavailable DB doesn't block startup.
 
 export default pool;
