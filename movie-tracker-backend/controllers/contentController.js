@@ -1,6 +1,10 @@
 import axios from "axios";
 import db from "../config/db.js";
 
+// Shared axios instance — all external API calls time out after 8 seconds so a
+// slow third-party service never hangs an Express worker indefinitely.
+const http = axios.create({ timeout: 8000 });
+
 // Manually add a movie/series to content table, then link to user
 export const addContent = async (req, res) => {
   const { user_id } = req.user;
@@ -211,7 +215,7 @@ export const searchTMDB = async (req, res) => {
     return res.status(400).json({ message: "query param is required" });
 
   try {
-    const { data } = await axios.get(
+    const { data } = await http.get(
       "https://api.themoviedb.org/3/search/multi",
       {
         params: {
@@ -261,7 +265,7 @@ export const getOMDBDetails = async (req, res) => {
         ? `https://api.themoviedb.org/3/tv/${tmdb_id}/external_ids`
         : `https://api.themoviedb.org/3/movie/${tmdb_id}/external_ids`;
 
-    const { data: externalIds } = await axios.get(tmdbEndpoint, {
+    const { data: externalIds } = await http.get(tmdbEndpoint, {
       params: { api_key: process.env.TMDB_API_KEY },
     });
 
@@ -272,7 +276,7 @@ export const getOMDBDetails = async (req, res) => {
         .json({ message: "IMDB ID not found for this title" });
 
     // Step 2 — fetch full details from OMDB using imdb_id
-    const { data: omdb } = await axios.get("https://www.omdbapi.com/", {
+    const { data: omdb } = await http.get("https://www.omdbapi.com/", {
       params: {
         i: imdb_id,
         apikey: process.env.OMDB_API_KEY,
@@ -331,7 +335,7 @@ export const getNews = async (req, res) => {
     // Try each title individually and collect results, fallback to general film news
     let articles = [];
     for (const title of titles) {
-      const { data } = await axios.get(
+      const { data } = await http.get(
         "https://content.guardianapis.com/search",
         {
           params: {
@@ -360,7 +364,7 @@ export const getNews = async (req, res) => {
 
     // If no title-specific results, fall back to latest film & TV news
     if (!articles.length) {
-      const { data } = await axios.get(
+      const { data } = await http.get(
         "https://content.guardianapis.com/search",
         {
           params: {

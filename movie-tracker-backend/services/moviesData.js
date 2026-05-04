@@ -6,9 +6,12 @@ dotenv.config();
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const OMDB_API_KEY = process.env.OMDB_API_KEY;
 
+// Shared axios instance with an 8-second timeout for all external API calls
+const http = axios.create({ timeout: 8000 });
+
 export const fetchMovieDetails = async (movieId) => {
   try {
-    const tmdbResponse = await axios.get(
+    const tmdbResponse = await http.get(
       `https://api.themoviedb.org/3/movie/${movieId}`,
       {
         params: {
@@ -19,7 +22,7 @@ export const fetchMovieDetails = async (movieId) => {
 
     const movieData = tmdbResponse.data;
 
-    const omdbResponse = await axios.get(`http://www.omdbapi.com/`, {
+    const omdbResponse = await http.get(`http://www.omdbapi.com/`, {
       params: {
         apikey: OMDB_API_KEY,
         t: movieData.title,
